@@ -1,0 +1,235 @@
+Problem 1 (25 Points).
+In the third homework you were given telco churn data set. You were asked to predict customer churn with Logistic Regression, 
+Decision Tree, Support Vector Machine, K-Nearest Neighbor and Neural Network methods. Here, you are going to perform hyper 
+parameter optimization on the same data set. For cross-validation use 5-Fold cross validation with shuffling
+Use the following search options for the hyper parameters of a given classifier. Report best score and the hyper parameter 
+set resulting the best score.
+For logistic regression try with the following parameters:
+C parameter with 0.001,0.01,0.1,1,10,100,1000 and penalty parameter "l1","l2"
+For decision tree classifier:
+max_depth: 50,150,250  min_samples_split: 2,3  min_samples_leaf: 1,2,3
+
+def problem1(csvfile):
+
+    import pandas as pd
+    import numpy as np
+    from sklearn.model_selection import train_test_split
+    from sklearn.model_selection import KFold
+    from sklearn.model_selection import GridSearchCV
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.tree import DecisionTreeClassifier
+    data=pd.read_csv(csvfile)
+    
+    #To change the values of Churn column to 0-1 format, we define a function, apply it to column
+    def churn_check(x):
+        if x=='Yes':
+            return 1
+        else:
+            return 0
+    data['Churn']=data['Churn'].apply(churn_check)
+    data[["Churn"]] = data[["Churn"]].astype('bool')
+    
+    #Drop the customerID column
+    data=data.drop(['customerID'], axis=1)
+    
+    #Drop missing values in TotalCharges column by replacing space
+    data['TotalCharges'].replace(' ', np.nan, inplace=True)
+    data.dropna(subset=['TotalCharges'], inplace=True)
+    
+    #TotalCharges column is not in the desired datatype, we change it into numeric format
+    data[["TotalCharges"]] = data[["TotalCharges"]].apply(pd.to_numeric)
+    
+    #Get categorical columns into 0-1 format
+    data=pd.get_dummies(data)
+    
+    #We prepare data to fit to models
+    X=data.drop(['Churn'], axis=1)
+    Y=data.Churn
+    
+    #Create KFold
+    kf=KFold(n_splits=5, shuffle=True)
+
+    #For logistic regression model, we will use hyper parameter optimization using gridsearch
+    log_model=LogisticRegression()
+    #Enter parameter giving in the problem to a dictionary
+    param_grid={'C':[0.001, 0.01, 0.1, 1, 10, 100, 1000], 'penalty': ['l1', 'l2']}
+    #Create the search with model and parametes
+    gridsearch = GridSearchCV(log_model, param_grid)
+    #Get best score using 5 fold with shuffling
+    scores_gridsearch=[]
+    for train,test in kf.split(X,Y):
+        gridsearch.fit(X.values[train], Y.values[train])
+        score=gridsearch.score(X.values[test], Y.values[test])
+        scores_gridsearch.append(score)
+    gridsearch_best_acc=np.max(np.array(scores_gridsearch))
+    print('For logistic regression best score:\n{}'.format(gridsearch_best_acc))
+    print('parameter set for the best score\n{}'.format(gridsearch.best_params_))
+
+    #We do the same as the logistic regression changing the parameters, answer takes some time
+    Dec_Tree=DecisionTreeClassifier()
+    param_grid2={'max_depth':[50, 150, 250], 'min_samples_split': [2, 3], 'min_samples_leaf':[1,2,3]}
+    gridsearch2 = GridSearchCV(Dec_Tree, param_grid2)
+    scores_gridsearch2=[]
+    for train,test in kf.split(X,Y):
+        gridsearch2.fit(X.values[train], Y.values[train])
+        score=gridsearch2.score(X.values[test], Y.values[test])
+        scores_gridsearch2.append(score)
+    gridsearch2_best_acc=np.max(np.array(scores_gridsearch2))
+    print('For Decision Tree best score:\n{}'.format(gridsearch2_best_acc))
+    print('parameter set for the best score\n{}'.format(gridsearch2.best_params_))
+
+Problem 2 (25 Points).
+You are given "concrete.csv" file that contains concrete compressive strength and the related features. More information 
+can be found at http://archive.ics.uci.edu/ml/datasets/concrete+compressive+strength
+Predict concrete compressive strength using given features. Using LinearRegression calculate R- squared and mean absolute 
+error values for these predictions. For cross-validation use 5-Fold cross validation with shuffling.
+
+def problem2(csvfile):
+    import numpy as np
+    import pandas as pd
+    from sklearn.linear_model import LinearRegression
+    from sklearn.model_selection import train_test_split
+    from sklearn.model_selection import KFold
+    from sklearn.metrics import mean_absolute_error
+    #read data to a dataframe
+    data=pd.read_csv(csvfile)
+    #prepare the data to use in the model
+    X = data.drop('strength',1)
+    Y = data.strength
+    #create 5 fold cross validation with shuffling, and model
+    kf=KFold(n_splits=5, shuffle=True)
+    lreg=LinearRegression()
+    #create two arrays to store r-squared score and mean absolute errors
+    scores=[]
+    errors=[]
+    #fit model with train values and get the scores
+    for train,test in kf.split(X,Y):
+        model=lreg.fit(X.values[train], Y.values[train])
+        score=model.score(X.values[test], Y.values[test])
+        scores.append(score)
+        #predict with train values and get error values
+        Y_predicted=lreg.predict(X.values[train])
+        error=mean_absolute_error(Y.values[train], Y_predicted)
+        errors.append(error)
+    #print the results in desired format     
+    print('R-squared: {}'.format(np.mean(np.array(scores))))
+    print('mean_absolute_error: {}'.format(np.mean(np.array(errors))))
+    
+Problem 3 (25 Points).
+You are given "customer.csv" file containing information to be used for the segmentation of customers. Cluster customer 
+information using K-means algorithm. First, determine the optimal number of clusters using Elbow and silhouette methods. 
+Before clustering apply standart scaling to the attributes. You can drop the "ID" column.
+Once you obtain the optimal number of clusters, plot the data points in each cluster with the same color. Use scatter 
+plot where x axis is the "Visit Time" and y-axis is the "Average Expense". Use different marker types for males and females. 
+Marker size should be equal to age.
+
+def problem3(csvfile):
+    import numpy as np
+    import pandas as pd
+    from sklearn.cluster import KMeans
+    import matplotlib.pyplot as plt
+    import sklearn.preprocessing
+    from sklearn.metrics import silhouette_score
+    from sklearn.preprocessing import StandardScaler
+    
+    #read data and drop ID column
+    data=pd.read_csv(csvfile)
+    data=data.drop('ID',1)
+    
+    #apply standard scalling to data
+    scaler=StandardScaler()
+    scaled_data = scaler.fit_transform(data)
+    scaled_data = pd.DataFrame(scaled_data, columns=data.columns)
+    
+    #Create inertia and silhouette score list for cluster numbers from 2 to 10
+    inertia_list=[]
+    silhouette_score_list=[]
+    for i in range (2,10):
+        k_means=KMeans(n_clusters=i)
+        k_means.fit(scaled_data)
+        inertia_list.append(k_means.inertia_)
+        silhouette_score_list.append(silhouette_score(scaled_data,k_means.labels_))
+
+    #Create a graph to investigate according to elbow method, by the result the best cluster number seems to be 4 or 5
+    cluster_numbers=np.arange(2,10)
+    elbow_graph=plt.figure()
+    plt.plot(cluster_numbers,inertia_list,"o-")
+    plt.grid(True)
+    plt.xlabel('Cluster Number')
+    plt.ylabel('Inertia or Distortion')
+    plt.title('Elbow method')
+    plt.close(elbow_graph)
+
+    #Create a graph to investigate according to silhouette score method, combining the result from two methods he best cluster number seems to be 4 
+    sil_graph=plt.figure()
+    plt.plot(cluster_numbers,silhouette_score_list,"o-")
+    plt.grid(True)
+    plt.xlabel('Cluster Number')
+    plt.ylabel('silhouette_score')
+    plt.title('silhouette method')
+    plt.close(sil_graph)
+
+    #Create our model with 4 clusters and predict the classes to a new column in our data
+    model=KMeans(n_clusters=4)
+    model.fit(scaled_data)
+    data['Class']=model.predict(scaled_data)
+
+    #Plot the clusters as desired(I wasn't able to change marker style acc. to gender)
+    plt.scatter(data[data["Class"]==0]["Visit.Time"],data[data["Class"]==0]["Average.Expense"], s=data.Age, c='red')
+    plt.scatter(data[data["Class"]==1]["Visit.Time"],data[data["Class"]==1]["Average.Expense"], s=data.Age, c='green')
+    plt.scatter(data[data["Class"]==2]["Visit.Time"],data[data["Class"]==2]["Average.Expense"], s=data.Age, c='black')
+    plt.scatter(data[data["Class"]==3]["Visit.Time"],data[data["Class"]==3]["Average.Expense"], s=data.Age, c='blue')
+    plt.xlabel('Visit Time')
+    plt.ylabel('Average Expense')
+
+    plt.show()
+
+You are given "fitbit.csv" file containing information activities carrried out during the day and burned calories estimate 
+throughout the day. We are going to select important features affecting calories burned.
+First, using mutual information score find the top-4 features having the highest relationship with the target ("calories 
+burned" column).
+Second, using Recursive Feature Elimination method with Ridge regressor find top-4 feature combination.
+
+def problem4(csvfile):
+
+    import numpy as np
+    import pandas as pd
+
+    #read data and drop ID column
+    data=pd.read_csv(csvfile)
+    data=data.drop('Date',1)
+
+    #By summing data, it is clear that there are problems in the format. To fix it first replace , with .
+    data=data.replace(',','.',regex=True)
+    #Then the numbers are deduced by 1000 so we fix it
+    data['Steps']=pd.to_numeric(data['Steps'])*1000
+    data['Calories Burned']=pd.to_numeric(data['Calories Burned'])*1000
+    data['Activity Calories']=pd.to_numeric(data['Activity Calories'])*1000
+    #Againg by summing, it is clear that some numbers are changed extremely in the process above, acctually ones already in integer format gets multipled by 1000
+    #to fix this we identfy them in a for loop and change
+    ac=data['Activity Calories']
+    ac=np.asarray(ac)
+    for i in range(0,30):
+        if ac[i]>10000:
+            ac[i]=ac[i]/1000
+    data['Activity Calories']=ac
+    #We separete data as features and target
+    features=data.drop(['Calories Burned'], axis=1)
+    target=data['Calories Burned']
+    #Use mutual_info regression and sort the result to get top 4 feature
+    from sklearn.feature_selection import mutual_info_regression
+    mi=mutual_info_regression(features, target)
+    srt_ind_mi=np.argsort(mi)
+    mi_features=[features.columns[srt_ind_mi[-1]],features.columns[srt_ind_mi[-2]],features.columns[srt_ind_mi[-3]],features.columns[srt_ind_mi[-4]]]
+    print('Selected features having top mutual information scores')
+    print(mi_features)
+    #Use RFE with ridge regression
+    from sklearn.feature_selection import RFE
+    from sklearn.linear_model import Ridge
+    estimator=Ridge()
+    selector=RFE(estimator, 4, step=1)
+    selector=selector.fit(features, target)
+
+    rfe_feaures=np.array(features.columns)[selector.support_]
+    print('Selected features by Recursive Feature Elimination')
+    print(rfe_feaures)
