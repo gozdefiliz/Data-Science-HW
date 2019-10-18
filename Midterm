@@ -1,0 +1,103 @@
+Problem 1 (25 Points).
+You are given “BreadBasket_DMS.csv” file that contains sales informations of a bakery. 
+The colums are: Date,Time,Transaction and Item. 
+Transaction can be thought as the order id. Using this data, find the month that Coffee sold in the highest quantity. 
+Return also the number coffee sold.
+
+def problem1(file):
+    import pandas as pd
+    #We construct our dataframe as data.
+    data=pd.read_table(file, delimiter=',', header=0)
+    data['Date'] = pd.to_datetime(data['Date'])
+    #From 'Item' column we choose the rows containing 'coffee'
+    coffeedata=data[data.Item.str.contains('Coffee')]
+    #We count the number of items in the 'Item' column by date
+    coffeedata=coffeedata.groupby('Date').count()
+    #We the monthly number from 'coffeedata' as result. Change the index type as the desired format and change the result as a dataframe
+    result=coffeedata['Item'].resample('M').sum()
+    result.index=result.index.strftime('%Y-%B')
+    result=pd.DataFrame(result)
+    #Get our answers
+    Quantity=result.Item.max()
+    Month=result.index[result['Item'] == Quantity].tolist()
+    #Print our answers in the desired format
+    print('Month: {}\nQuantity: {}'.format(Month[0],Quantity))
+
+Problem 2 (25 Points).
+You are given “fertility_rate.csv” file showing the birth rate of countries for years starting from 1960 to 2016.
+Using this data plot fertility rate of Turkey along the years.
+
+def problem2(file):
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    #We import data as dataframe
+    data=pd.read_table(file, delimiter=',', header=0)
+    #By indexing with column 'country name', we select the data corresponding to Turkey
+    data=data.set_index('Country Name')
+    data_turkey=pd.DataFrame(data.loc['Turkey'])
+    #Reset index to change column names and drop the rows with non numerical data
+    data_turkey=data_turkey.reset_index()
+    data_turkey.columns=['Year','Fertility Rate']
+    data_turkey=data_turkey.drop(data_turkey.index[0:3])
+    #Change the data type of column'Year' and set it as index
+    data_turkey['Year']=pd.to_datetime(data_turkey['Year'])
+    data_turkey=data_turkey.set_index('Year')
+    #Plot the graph as desired 
+    graph=data_turkey.plot(color = 'r', grid=True, title='Turkey',legend=0)
+    graph.set_ylabel('Fertility Rate')
+    
+    plt.show()
+
+Problem 3 (25 Points).
+You are given “WA_Fn-UseC_-Telco-Customer-Churn.csv” file on Telcom customer churn taken from 
+https://www.kaggle.com/blastchar/telco-customer-churn. You can find more information about the columns in the link provided.
+Produce the following table showing the average of Monthly charges grouped by customers who churned or not. The table also is grouped by gender.
+
+def problem3(file):
+    import pandas as pd
+    import numpy as np
+    #We get our data as dataframe
+    data=pd.read_table(file, delimiter=',', header=0)
+    #Construct the desired result as pivot table and print the table
+    table=pd.pivot_table(data, columns=['gender'], index=['Churn'],aggfunc=np.average, values='MonthlyCharges')
+    print(table)
+
+Problem 4 (25 Points).
+For this problem, use the data file given problem3. In that data file, the tenure column shows the number of months 
+the customer has stayed with the company. Here we want to analyse the churn rate as a function of tenure year. Produce 
+the following table for this analysis. Year tenure is zero if the tenure month is less than 12, one if thenure month is 
+between 12 and 23, and so on. In the table, the count column shows the number of data points. The Percent column shows 
+the percentage of the “Yes” in the churn column.
+
+def problem4(file):
+    import pandas as pd
+    #We get our data as dataframe
+    data=pd.read_table(file, delimiter=',', header=0)
+    #To group the 'tenure' data in the year format we define a function 'f'
+    def f(x):
+        if x<12:
+            return 0
+        elif (x<24) and (x>=12):
+            return 1
+        elif (x<36) and (x>=24):
+            return 2
+        elif (x<48) and (x>=36):
+            return 3
+        elif (x<60) and (x>=48):
+            return 4
+        elif (x<72) and (x>=60):
+            return 5
+        elif (x<84) and (x>=72):
+            return 6
+    #We apply the function 'f' to column 'tenure', and restore the result in a new column named 'year_tenure'
+    data['year_tenure']=data.tenure.apply(f)
+    #To be able to work with it, we apply a function to column 'Churn' to change its format to binary, and store the results in a new column 'churn_'
+    data['churn_']=data.Churn.map(lambda x: 1 if x=='Yes' else 0)
+    #Create a dataframe to store the result table
+    result=pd.DataFrame()
+    #For the 'Count' column we group the 'data' by 'year_tenure' and use the size function to get the count
+    result['Count']=data.groupby('year_tenure').size()
+    #For the 'Percent' column we use pivot_table function. Since we already changed the values of 'Churn' column to binary and used 1 for 'Yes', pivot_table will give us percent of 'Yes' values.
+    result['Percent']=(data.pivot_table(index='year_tenure', values='churn_'))*100
+    #Print the desired table
+    print(result)
