@@ -1,0 +1,100 @@
+You are given “WA_Fn-UseC_-Telco-Customer-Churn.csv” file on Telcom customer churn taken from 
+https://www.kaggle.com/blastchar/telco-customer-churn. You can find more information about the columns 
+in the link provided.
+Predict customer churn with Logistic Regression, Decision Tree, Support Vector Machine, K-Nearest Neighbor 
+and Neural Network methods. For the parameters of these models use sklearn default parameters. For cross-validation 
+use 5-Fold cross validation with shuffling. When preparing the data for prediction you can drop the customer ID. 
+TotalCharges column has some missing data, drop the rows having missing data in the totalcharges column. Print 
+the average accuracy scores for each classifier as given below. Note that you may get different scores since we 
+use shuffling the data in splitting step.
+
+def problem1(csvfile):
+    import pandas as pd
+    import numpy as np
+    from sklearn.model_selection import train_test_split
+    from sklearn.model_selection import KFold
+    data=pd.read_csv(csvfile)
+    
+    #To change the values of Churn column to 0-1 format, we define a function, apply it to column
+    def churn_check(x):
+        if x=='Yes':
+            return 1
+        else:
+            return 0
+    data['Churn']=data['Churn'].apply(churn_check)
+    data[["Churn"]] = data[["Churn"]].astype('bool')
+    
+    #Drop the customerID column
+    data=data.drop(['customerID'], axis=1)
+    
+    #Drop missing values in TotalCharges column by replacing space
+    data['TotalCharges'].replace(' ', np.nan, inplace=True)
+    data.dropna(subset=['TotalCharges'], inplace=True)
+    
+    #TotalCharges column is not in the desired datatype, we change it into numeric format
+    data[["TotalCharges"]] = data[["TotalCharges"]].apply(pd.to_numeric)
+    
+    #Get categorical columns into 0-1 format
+    data=pd.get_dummies(data)
+    
+    #We prepare data to fit to models
+    X=data.drop(['Churn'], axis=1)
+    Y=data.Churn
+    
+    #Create KFold
+    kf=KFold(n_splits=5, shuffle=True)
+    
+    #Create logistic regression model, test it with 5-fold cross validation with shuffling, get the average score
+    from sklearn.linear_model import LogisticRegression
+    log_model=LogisticRegression()
+    scores_log_model=[]
+    for train,test in kf.split(X,Y):
+        log_model.fit(X.values[train], Y.values[train])
+        score=log_model.score(X.values[test], Y.values[test])
+        scores_log_model.append(score)
+    log_model_average_acc=np.average(np.array(scores_log_model))
+    print('LogisticRegression %.2f'%log_model_average_acc)
+    
+    #Create decision tree model, test it with 5-fold cross validation with shuffling, get the average score
+    from sklearn.tree import DecisionTreeClassifier
+    Dec_Tree=DecisionTreeClassifier()
+    scores_Dec_Tree=[]
+    for train,test in kf.split(X,Y):
+        Dec_Tree.fit(X.values[train], Y.values[train])
+        score=Dec_Tree.score(X.values[test], Y.values[test])
+        scores_Dec_Tree.append(score)
+    Dec_Tree_average_acc=np.average(np.array(scores_Dec_Tree))
+    print('DecisionTree       %.2f'%Dec_Tree_average_acc)
+    
+    #Create linear SVC model, test it with 5-fold cross validation with shuffling, get the average score
+    from sklearn.svm import LinearSVC
+    lin_SVC=LinearSVC()
+    scores_lin_SVC=[]
+    for train,test in kf.split(X,Y):
+        lin_SVC.fit(X.values[train], Y.values[train])
+        score=lin_SVC.score(X.values[test], Y.values[test])
+        scores_lin_SVC.append(score)
+    lin_SVC_average_acc=np.average(np.array(scores_lin_SVC))
+    print('LinearSVC          %.2f'%lin_SVC_average_acc)
+    
+    #Create KNeighbors classification model, test it with 5-fold cross validation with shuffling, get the average score
+    from sklearn.neighbors import KNeighborsClassifier
+    knn=KNeighborsClassifier()
+    scores_knn=[]
+    for train,test in kf.split(X,Y):
+        knn.fit(X.values[train], Y.values[train])
+        score=knn.score(X.values[test], Y.values[test])
+        scores_knn.append(score)
+    knn_average_acc=np.average(np.array(scores_knn))
+    print('KNN                %.2f'%knn_average_acc)
+    
+    #Create MLP Classifier, test it with 5-fold cross validation with shuffling, get the average score
+    from sklearn.neural_network import MLPClassifier
+    MLPC=MLPClassifier()
+    scores_MLPC=[]
+    for train,test in kf.split(X,Y):
+        MLPC.fit(X.values[train], Y.values[train])
+        score=MLPC.score(X.values[test], Y.values[test])
+        scores_MLPC.append(score)
+    MLPC_average_acc=np.average(np.array(scores_MLPC))
+    print('MLPClassifier      %.2f'%MLPC_average_acc)
