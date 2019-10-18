@@ -1,0 +1,54 @@
+Problem 1 (50 Points).
+You are given a folder named “sales_per_day” which contains daily sales number of some items for about 30 days. 
+Using this data find the most saled item for 30 day interval. Print the total sales number for this item. 
+Your function should take the folder name as an input.
+
+def problem1(folder):
+    import pandas as pd
+    import os
+    #we list the filenames in the folder
+    filenames=[f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder,f))]
+    #we change our path to folder
+    os.chdir(folder)
+    #we create an empty dataframe to fill with the text file in the folder
+    data=pd.DataFrame()
+    #In the for loop, we add every text file to our empty dataframe(data)
+    for file in filenames:
+        data_=pd.read_table(file,delimiter=':', header=0, names=['Item','Nb_of_Sales'])
+        data=data.append(data_)
+    #we group our data by the column 'Item' and sum the corresponding values
+    data_grouped=data.groupby('Item').sum()
+    #we find the maximum number in the grouped data
+    most_saled_item=data_grouped[data_grouped['Nb_of_Sales']==data_grouped['Nb_of_Sales'].max()]
+    #we find the name of the item, then we define the name and the number sales to variables
+    most_saled_item_name=most_saled_item.index.values[0]
+    nb_of_sales_most_saled=data.groupby('Item').get_group(most_saled_item_name)
+    #we print the result
+    print('Most saled item is {} which has the sales quantity of {}'.format(most_saled_item_name, nb_of_sales_most_saled['Nb_of_Sales'].sum()))
+
+Problem 2 (50 Points).
+Euro 2012 stats TEAM.csv file contains statistics of the teams that attended Europen Cup 2012. 
+Using this data do the following tasks:
+a) Find the teams that have lowest and highest number of yellow cards.
+b) Find the team that has the best shooting accuracy.
+
+def problem2(text):
+    import pandas as pd
+    import numpy as np
+    #we import our data
+    data=pd.read_table(text,delimiter=',')
+    #we find the maximum number of yellow cards
+    Max_Yellow_Cards=data[data['Yellow Cards']==data['Yellow Cards'].max()]
+    #we find the team/teams with the maximum number of yellow cards
+    Max_Yellow_Cards_Country=np.array(Max_Yellow_Cards['Team'])
+    #we find the minimum number of yellow cards
+    Min_Yellow_Cards=data[data['Yellow Cards']==data['Yellow Cards'].min()]
+    #we find the team/teams with the minimum number of yellow cards
+    Min_Yellow_Cards_Country=np.array(Min_Yellow_Cards['Team'])
+    #we find the maximum of shooting accuracy
+    Max_Shooting_Accuracy=data[data['Shooting Accuracy']==data['Shooting Accuracy'].max()]
+    #we find the team/teams with the maximum of shooting accuracy
+    Max_Shooting_Accuracy_Country=np.array(Max_Shooting_Accuracy['Team'])
+    #we print the results
+    print('countries that have the minimum number of yellow cards: \n{} \n{} \ncountries that have the maximum number of yellow cards: \n{} \nthe team that has the highest scooring accuracy is {}'.format(Min_Yellow_Cards_Country[0], Min_Yellow_Cards_Country[1], Max_Yellow_Cards_Country[0], Max_Shooting_Accuracy_Country[0]))
+
