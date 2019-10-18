@@ -1,0 +1,162 @@
+1-A year is a leap year if it is divisible by 4, except that years divisible by 100 are not leap years unless 
+they are also divisible by 400. Write a function that takes a year as an input and determines how many leap 
+years there have been between 1600 and that year.
+def problem1(x):
+#Since our algortihm works for years bigger than 1600, we print a warning
+	if(x<1600):
+		print("The year must be bigger than 1600!")
+#We find leap years using modulos and count all leap years between 1600 and given year
+	else:
+		c=0
+		for i in range(1600,x):
+			if((i%4==0) and (i%100!=0)):
+				c=c+1
+			elif((i%100==0) and (i%400==0)):
+				c=c+1
+		print("There are {} leap years between 1600 and {}.".format(c,x))
+
+
+2-You are given a csv (gdp_per_capita.csv) file for GDP per capita taken from World Bank. 
+The file holds data from 1960 to 2017. Note that some data for some countries at certain 
+years are missing. Write a function that takes this file as an input and do the following tasks.
+a) For how many countries is the data available for all the years? hint: You can use np.isnan function 
+to check a value is NaN or not. (15 Points)
+b) Print the top-five countries that have highest standart deviations between the years 2000-2017. 
+For this taks, work on the countries which have data for all the years. (15 Points)
+def problem2(text):
+        import numpy as np
+        c=0
+#we get the gdp datas of countries and countries seperately, to have 'nan' for null values we use genfromtxt
+        data=np.genfromtxt(text,delimiter=";",usecols=np.arange(1,59),skip_header=1)
+        countries=np.genfromtxt(text,delimiter=';',usecols=0,skip_header=1,dtype=str)
+#Since sum is of any row countaining a 'nan' value will be 'nan', we get sum of all rows and count the nb of not 'nan' values with isnan function
+        total_sum=np.sum(data,axis=1)
+        index_of_nonzero_countries=[]
+        
+        for i in range(0,264):
+                if (np.isnan(total_sum[i])==False):
+                        c=c+1
+        print("For {} countries data is available from 1960 to 2017.".format(c))
+
+#we get the index of not null countries to a new array called index_of_nonzero_countries
+        for i in range(0,264):
+                if (np.isnan(total_sum[i])==False):
+                    index_of_nonzero_countries=np.append(index_of_nonzero_countries,i)
+        index_of_nonzero_countries=index_of_nonzero_countries.astype(int)
+
+#to get the gdp values of non zero countries(non_zero_count_data) and names of this countries(non_zero_countries) we create an multi dimensional and a one dimensional array, and use the index_of_nonzero_countries to fill it
+        non_zero_count_data=np.zeros((123,58))
+        non_zero_countries=np.zeros(123)
+        non_zero_countries=non_zero_countries.astype(str)
+        j=0
+        for i in range(0,123):
+            non_zero_count_data[j,:]=data[index_of_nonzero_countries[i],:]
+            non_zero_countries[j]=countries[index_of_nonzero_countries[i]]
+            j=j+1
+#from this gdp values array(non_zero_count_data) we select the vakues between 2000 and 2017
+        non_zero_count_data_00_17=non_zero_count_data[:,40:58]
+#calculate the standart deviation between this years using the function std in numpy       
+        stand_dev=np.std(non_zero_count_data_00_17, axis=1)
+#By getting an indexer we print the results in the desired format
+        indexer=stand_dev.argsort()
+        print('\nFirst country with the highest standart deviation between 2000-2017 is {}'.format(non_zero_countries[indexer[-1]]))
+        print('Second country with the highest standart deviation between 2000-2017 is {}'.format(non_zero_countries[indexer[-2]]))
+        print('Third country with the highest standart deviation between 2000-2017 is {}'.format(non_zero_countries[indexer[-3]]))
+        print('Fourth country with the highest standart deviation between 2000-2017 is {}'.format(non_zero_countries[indexer[-4]]))
+        print('Fifth country with the highest standart deviation between 2000-2017 is {}'.format(non_zero_countries[indexer[-5]]))
+
+3-You are given a file named “fifa_countries_auidence.csv” which contains the following information in
+the columns. Using this dataset do the following task: Print the number of countries that each confederation has. 
+When printing, you should sort the confedarations in the descending order. Your function should take 
+“fifa_countries_auidence.csv “ file as the input. 
+
+def problem3(text):
+    import numpy as np
+#We get the data and name of confederations seperatly. Since we will only use 2 columns from csv file we only get them
+    data=np.genfromtxt(text,dtype="str",delimiter=",",usecols=np.arange(0,2),skip_header=1)
+#To get the unique confederations we use set type
+    conf=np.array(list(set(data[:,1])))
+#to calculate the sum of countries for every confederation we create 6 constants
+    x_0=0
+    x_1=0
+    x_2=0
+    x_3=0
+    x_4=0
+    x_5=0
+#we calculate the nb of countries and store them in an array(nb_of_countries)
+    for i in range (0,191):
+        if data[i][1]==conf[0]:
+            x_0=x_0+1
+        elif data[i][1]==conf[1]:
+            x_1=x_1+1
+        elif data[i][1]==conf[2]:
+            x_2=x_2+1
+        elif data[i][1]==conf[3]:
+            x_3=x_3+1
+        elif data[i][1]==conf[4]:
+            x_4=x_4+1
+        elif data[i][1]==conf[5]:
+            x_5=x_5+1
+  nb_of_countries=[x_0,x_1,x_2,x_3,x_4,x_5]
+  nb_of_countries=np.array(nb_of_countries)
+#We create an index and print our result in the desired order
+    indexer=nb_of_countries.argsort()
+
+    print("{} has {} countries".format(conf[indexer[-1]],nb_of_countries[indexer[-1]]))
+    print("{} has {} countries".format(conf[indexer[-2]],nb_of_countries[indexer[-2]]))
+    print("{} has {} countries".format(conf[indexer[-3]],nb_of_countries[indexer[-3]]))
+    print("{} has {} countries".format(conf[indexer[-4]],nb_of_countries[indexer[-4]]))
+    print("{} has {} countries".format(conf[indexer[-5]],nb_of_countries[indexer[-5]]))
+    print("{} has {} countries".format(conf[indexer[0]],nb_of_countries[indexer[0]]))
+    
+4-You are given airline safety data in the “airline-safety.csv” file.Using this dataset do the following tasks:
+a) Which airlines do have the highest number of incidents in the intervals 1985–1999 and 2000– 2014?
+b) Do the above analysis on a normalized data. Meaning, normalize the Total number of incidents with 
+Available seat kilometres flown every week data. After that, find the airlines which have highest incident 
+rate in the time intervals 1985–1999 and 2000–2014?
+def problem4(text):
+    import numpy as np
+#We get the data and airline names seperately
+    data=np.genfromtxt(text,delimiter=",",usecols=np.arange(1,8),skip_header=1,dtype=int)
+    airline=np.genfromtxt(text,delimiter=',',usecols=0,skip_header=1,dtype=str)
+#We get the incidents between 85_99 from data array
+    incidents_85_99=data[:,1]
+#We use argsort to find the index of the airline with maximum incidents
+    indexer=incidents_85_99.argsort()
+    max_incidents_85_99=incidents_85_99[indexer[-1]]
+#We find the index of maximum incidents in the'incidents_85_99' array, then using this index we find the airline and print the result
+    for i in range (0,56):
+        if incidents_85_99[i]==incidents_85_99[indexer[-1]]:
+            airline_with_max_incidents_85_99=airline[i]
+    print("{} has the maximum incident number in 1985-1999 which is {}".format(airline_with_max_incidents_85_99,max_incidents_85_99))
+#We make similar steps for incidents between 2000-2014
+    incidents_00_14=data[:,4]
+    indexer_2=incidents_00_14.argsort()
+    max_incidents_00_14=incidents_00_14[indexer_2[-1]]
+    for i in range (0,56):
+         if incidents_00_14[i]==incidents_00_14[indexer_2[-1]]:
+                airline_with_max_incidents_00_14=airline[i]
+    print("{} has the maximum incident number in 2000-2014 which is {}".format(airline_with_max_incidents_00_14,max_incidents_00_14))
+#To be able to normalize our data we get the avail_seat_km_per_week values from our data
+    avail_seat_km_per_week=data[:,0]
+#We create a new array for normalized values
+    norm_incidents_85_99=incidents_85_99/avail_seat_km_per_week
+#Similarly to the first part we use argsort the find the airline and print the result
+    indexer_3=norm_incidents_85_99.argsort()
+    max_norm_incidents_85_99=norm_incidents_85_99[indexer_3[-1]]
+    for i in range (0,56):
+        if norm_incidents_85_99[i]==norm_incidents_85_99[indexer_3[-1]]:
+            airline_with_max_norm_incidents_85_99=airline[i]
+    print("{} has the maximum normalized incident number in 1985-1999".format(airline_with_max_norm_incidents_85_99))
+#Similar to the previous part
+    norm_incidents_00_14=incidents_00_14/avail_seat_km_per_week
+    indexer_4=norm_incidents_00_14.argsort()
+    max_norm_incidents_00_14=norm_incidents_00_14[indexer_4[-1]]
+    for i in range (0,56):
+        if norm_incidents_00_14[i]==norm_incidents_00_14[indexer_4[-1]]:
+            airline_with_max_norm_incidents_00_14=airline[i]
+    print("{} has the maximum normalized incident number in 2000-2014".format(airline_with_max_norm_incidents_00_14))
+
+
+
+
